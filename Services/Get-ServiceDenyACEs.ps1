@@ -21,27 +21,36 @@ foreach ($key in $keys)
             continue
         }
 
-        # second check: BA principal without LC privilege. 
-        # May lead to false positives (e.g. LC granted only for everyone, no BA at all etc.) but it is worth paying attention anyway.
-        # 1. split by ( to find BA ACE
+        # second check: BA and AU principal without LC privilege. 
+        # 1. split by ( to find BA/AU ACE
         # 2. split by ; to find rights 
         # 3. go through rights to find LC
 
         $lcFound = $false
         foreach ($ace in $sddl.Split(')'))
         {
-            if (!$ace.StartsWith('(A;'))
+            if ($ace.Contains('(A;'))
             {
-                continue
-            }
-            if ($ace.EndsWith(';BA'))
-            {
-                $rightsString = $ace.Split(';')[2]
-                for ($i = 0; $i -lt ($rightsString.Length); $i+=2)
+                if ($ace.EndsWith(';BA'))
                 {
-                    if ($rightsString.Substring($i,2) -eq 'LC')
+                    $rightsString = $ace.Split(';')[2]
+                    for ($i = 0; $i -lt ($rightsString.Length); $i+=2)
                     {
-                        $lcFound = $true
+                        if ($rightsString.Substring($i,2) -eq 'LC')
+                        {
+                            $lcFound = $true
+                        }
+                    }
+                }
+                if ($ace.EndsWith(';AU'))
+                {
+                    $rightsString = $ace.Split(';')[2]
+                    for ($i = 0; $i -lt ($rightsString.Length); $i+=2)
+                    {
+                        if ($rightsString.Substring($i,2) -eq 'LC')
+                        {
+                            $lcFound = $true
+                        }
                     }
                 }
             }
